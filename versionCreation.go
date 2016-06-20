@@ -1,9 +1,11 @@
 package VersionNoFromGitlabBuilds
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -11,9 +13,9 @@ import (
 
 // GitLabAPIConnection collects all data needed for a connection to GitLab's REST api.
 type GitLabAPIConnection struct {
-    baseURL string
-    token   string
-    client  *http.Client
+	baseURL string
+	token   string
+	client  *http.Client
 }
 
 type commitID string
@@ -50,8 +52,69 @@ func (c *GitLabAPIConnection) NextVersionNo(projectName string) (int, error) {
 	return len(ci) + 1, err
 }
 
+// CreateTag creates a new tag for the given project's given commit with the given name.
+func (c *GitLabAPIConnection) CreateTag(projectName, commitID, tagName string) error {
+	pid, err := c.projectIDFromName(projectName)
+
+	if err != nil {
+		return err
+	}
+
+	var body = struct {
+		TagName string `json:"tag_name"`
+		Ref     string `json:"ref"`
+	}{
+		TagName: tagName,
+		Ref:     commitID,
+	}
+
+	b, err := json.Marshal(&body)
+
+	if err != nil {
+		return err
+	}
+
+	req, err := c.postRequest("/projects/"+strconv.Itoa(pid)+"/repository/tags", b)
+
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := c.client.Do(req)
+
+	if err != nil {
+		return err
+	}
+
+	resp, err := ioutil.ReadAll(res.Body)
+
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusCreated {
+		return errors.New(string(resp))
+	}
+
+	return nil
+}
+
+func (c *GitLabAPIConnection) postRequest(endPoint string, body []byte) (*http.Request, error) {
+	req, err := http.NewRequest("POST", c.baseURL+apiURL+endPoint, bytes.NewBuffer(body))
+
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("PRIVATE-TOKEN", c.token)
+
+	return req, nil
+}
+
 func (c *GitLabAPIConnection) getRequest(endPoint string) (*http.Request, error) {
-	req, err := http.NewRequest("GET", c.baseURL + apiURL +endPoint, nil)
+	req, err := http.NewRequest("GET", c.baseURL+apiURL+endPoint, nil)
 
 	if err != nil {
 		return nil, err
