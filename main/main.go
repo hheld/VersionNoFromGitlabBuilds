@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	conn := VersionNoFromGitlabBuilds.NewGitLabApiConnection("https://ubuntults", "d2EbZhyk9g9JyLJPX_ys")
+	conn := VersionNoFromGitlabBuilds.NewGitLabAPIConnection("https://ubuntults", "d2EbZhyk9g9JyLJPX_ys")
 	no, err := conn.NextVersionNo("RunnerTest")
 
 	if err != nil {

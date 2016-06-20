@@ -9,32 +9,36 @@ import (
 	"strconv"
 )
 
-type GitLabApiConnection struct {
-	baseUrl string
-	token   string
-	client  *http.Client
+// GitLabAPIConnection collects all data needed for a connection to GitLab's REST api.
+type GitLabAPIConnection struct {
+    baseURL string
+    token   string
+    client  *http.Client
 }
 
 type commitID string
 type setOfCommits map[commitID]struct{}
 
-const apiUrl = "/api/v3"
+const apiURL = "/api/v3"
 
-var re_nextLink = regexp.MustCompile(`<([^<>]+)>; rel="next"`)
+var reNextLink = regexp.MustCompile(`<([^<>]+)>; rel="next"`)
 
-func NewGitLabApiConnection(gitlabBaseUrl, privateToken string) *GitLabApiConnection {
+// NewGitLabAPIConnection creates a connection to a GitLab server such that its REST api functions can be used.
+func NewGitLabAPIConnection(gitlabBaseURL, privateToken string) *GitLabAPIConnection {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
-	return &GitLabApiConnection{
-		baseUrl: gitlabBaseUrl,
+	return &GitLabAPIConnection{
+		baseURL: gitlabBaseURL,
 		token:   privateToken,
 		client:  &http.Client{Transport: tr},
 	}
 }
 
-func (c *GitLabApiConnection) NextVersionNo(projectName string) (int, error) {
+// NextVersionNo looks at all builds on the connected server associated with the given project and creates a new build number from that information.
+// This results in automatically increasing build numbers per project.
+func (c *GitLabAPIConnection) NextVersionNo(projectName string) (int, error) {
 	pid, err := c.projectIDFromName(projectName)
 
 	if err != nil {
@@ -46,8 +50,8 @@ func (c *GitLabApiConnection) NextVersionNo(projectName string) (int, error) {
 	return len(ci) + 1, err
 }
 
-func (c *GitLabApiConnection) getRequest(endPoint string) (*http.Request, error) {
-	req, err := http.NewRequest("GET", c.baseUrl+apiUrl+endPoint, nil)
+func (c *GitLabAPIConnection) getRequest(endPoint string) (*http.Request, error) {
+	req, err := http.NewRequest("GET", c.baseURL + apiURL +endPoint, nil)
 
 	if err != nil {
 		return nil, err
@@ -58,7 +62,7 @@ func (c *GitLabApiConnection) getRequest(endPoint string) (*http.Request, error)
 	return req, nil
 }
 
-func (c *GitLabApiConnection) getAbsoluteRequest(endPoint string) (*http.Request, error) {
+func (c *GitLabAPIConnection) getAbsoluteRequest(endPoint string) (*http.Request, error) {
 	req, err := http.NewRequest("GET", endPoint, nil)
 
 	if err != nil {
@@ -70,7 +74,7 @@ func (c *GitLabApiConnection) getAbsoluteRequest(endPoint string) (*http.Request
 	return req, nil
 }
 
-func (c *GitLabApiConnection) projectIDFromName(projectName string) (int, error) {
+func (c *GitLabAPIConnection) projectIDFromName(projectName string) (int, error) {
 	req, err := c.getRequest("/projects")
 
 	if err != nil {
@@ -110,7 +114,7 @@ func (c *GitLabApiConnection) projectIDFromName(projectName string) (int, error)
 	return -1, errors.New("No project named '" + projectName + "' found")
 }
 
-func (c *GitLabApiConnection) commitsPerBuildWithReq(req *http.Request, s setOfCommits) error {
+func (c *GitLabAPIConnection) commitsPerBuildWithReq(req *http.Request, s setOfCommits) error {
 	res, err := c.client.Do(req)
 
 	if err != nil {
@@ -136,7 +140,7 @@ func (c *GitLabApiConnection) commitsPerBuildWithReq(req *http.Request, s setOfC
 		return errors.New(buildInfo.(map[string]interface{})["message"].(string))
 	}
 
-	allLinks := re_nextLink.FindAllStringSubmatch(res.Header.Get("link"), -1)
+	allLinks := reNextLink.FindAllStringSubmatch(res.Header.Get("link"), -1)
 
 	if allLinks != nil {
 		nextReq, err := c.getAbsoluteRequest(allLinks[0][1])
@@ -164,8 +168,8 @@ func (c *GitLabApiConnection) commitsPerBuildWithReq(req *http.Request, s setOfC
 	return nil
 }
 
-func (c *GitLabApiConnection) commitsPerBuild(projectID int) (setOfCommits, error) {
-	var s setOfCommits = make(setOfCommits)
+func (c *GitLabAPIConnection) commitsPerBuild(projectID int) (setOfCommits, error) {
+	var s = make(setOfCommits)
 
 	req, err := c.getRequest("/projects/" + strconv.Itoa(projectID) + "/builds")
 
