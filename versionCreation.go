@@ -102,7 +102,7 @@ func (c *GitLabAPIConnection) CreateTag(projectName, commitID, tagName string) e
 }
 
 func (c *GitLabAPIConnection) postRequest(endPoint string, body []byte) (*http.Request, error) {
-	req, err := http.NewRequest("POST", c.baseURL+apiURL+endPoint, bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", c.baseURL+apiURL+endPoint+"?per_page=100", bytes.NewBuffer(body))
 
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func (c *GitLabAPIConnection) postRequest(endPoint string, body []byte) (*http.R
 }
 
 func (c *GitLabAPIConnection) getRequest(endPoint string) (*http.Request, error) {
-	req, err := http.NewRequest("GET", c.baseURL+apiURL+endPoint, nil)
+	req, err := http.NewRequest("GET", c.baseURL+apiURL+endPoint+"?per_page=100", nil)
 
 	if err != nil {
 		return nil, err
