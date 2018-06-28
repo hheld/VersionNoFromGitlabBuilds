@@ -21,7 +21,7 @@ type GitLabAPIConnection struct {
 type commitID string
 type setOfCommits map[commitID]struct{}
 
-const apiURL = "/api/v3"
+const apiURL = "/api/v4"
 
 var reNextLink = regexp.MustCompile(`<([^<>]+)>; rel="next"`)
 
