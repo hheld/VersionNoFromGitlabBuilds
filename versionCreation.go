@@ -114,7 +114,7 @@ func (c *GitLabAPIConnection) postRequest(endPoint string, body []byte) (*http.R
 }
 
 func (c *GitLabAPIConnection) getRequest(endPoint string) (*http.Request, error) {
-	req, err := http.NewRequest("GET", c.baseURL+apiURL+endPoint+"?per_page=100", nil)
+	req, err := http.NewRequest("GET", c.baseURL+apiURL+endPoint+"?per_page=1000&membership=true", nil)
 
 	if err != nil {
 		return nil, err
