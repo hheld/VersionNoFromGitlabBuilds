@@ -114,7 +114,7 @@ func (c *GitLabAPIConnection) postRequest(endPoint string, body []byte) (*http.R
 }
 
 func (c *GitLabAPIConnection) getRequest(endPoint string) (*http.Request, error) {
-	req, err := http.NewRequest("GET", c.baseURL+apiURL+endPoint+"?per_page=100", nil)
+	req, err := http.NewRequest("GET", c.baseURL+apiURL+endPoint+"?per_page=1000&membership=true", nil)
 
 	if err != nil {
 		return nil, err
@@ -234,7 +234,7 @@ func (c *GitLabAPIConnection) commitsPerBuildWithReq(req *http.Request, s setOfC
 func (c *GitLabAPIConnection) commitsPerBuild(projectID int) (setOfCommits, error) {
 	var s = make(setOfCommits)
 
-	req, err := c.getRequest("/projects/" + strconv.Itoa(projectID) + "/builds")
+	req, err := c.getRequest("/projects/" + strconv.Itoa(projectID) + "/jobs")
 
 	if err != nil {
 		return nil, err
